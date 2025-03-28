@@ -60,9 +60,8 @@ export default function Home() {
     setError(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
       const response = await fetch(
-        `${apiUrl}/wallet/analysis?address=${walletAddress}&quick_trade_minutes=${quickTradeDuration}&days=${analysisPeriod}`
+        `/api/wallet/analysis?address=${walletAddress}&quick_trade_minutes=${quickTradeDuration}&days=${analysisPeriod}`
       );
 
       if (!response.ok) {
