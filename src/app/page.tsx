@@ -8,6 +8,7 @@ interface TokenAnalysis {
   first_buy_time: number;
   is_coin_transferred_from_another_account: boolean;
   is_quick_trade: boolean;
+  is_unrealized_profit: boolean;
   last_sell_time: number;
   profit_usd: string;
   roi_percentage: string;
@@ -32,6 +33,7 @@ interface AnalysisSummary {
   total_roi_percentage: string;
   traded_to_another_wallet_count: number;
   transferred_from_another_account_count: number;
+  unrealized_profit_count: number;
 }
 
 interface AnalysisResponse {
@@ -234,25 +236,61 @@ export default function Home() {
               </div>
               <div className="bg-gray-50 dark:bg-black/10 p-3 rounded-lg">
                 <p className="text-sm text-gray-500 dark:text-gray-400">Quick Trade</p>
-                <p className="text-lg font-semibold">{result.data.summary.quick_trade_count}</p>
+                <p className="text-lg font-semibold">
+                  {result.data.summary.quick_trade_count}
+                  <span className="text-xs text-gray-500 ml-2">
+                    ({((result.data.summary.quick_trade_count / result.data.summary.total_coins_analyzed) * 100).toFixed(1)}%)
+                  </span>
+                </p>
               </div>
               <div className="bg-gray-50 dark:bg-black/10 p-3 rounded-lg">
                 <p className="text-sm text-gray-500 dark:text-gray-400">Kârlı İşlemler</p>
-                <p className="text-lg font-semibold">{result.data.summary.profitable_trades_count}</p>
+                <p className="text-lg font-semibold">
+                  {result.data.summary.profitable_trades_count}
+                  <span className="text-xs text-gray-500 ml-2">
+                    ({((result.data.summary.profitable_trades_count / result.data.summary.total_coins_analyzed) * 100).toFixed(1)}%)
+                  </span>
+                </p>
               </div>
               <div className="bg-gray-50 dark:bg-black/10 p-3 rounded-lg">
                 <p className="text-sm text-gray-500 dark:text-gray-400">Zararlı İşlemler</p>
-                <p className="text-lg font-semibold">{result.data.summary.loss_trades_count}</p>
+                <p className="text-lg font-semibold">
+                  {result.data.summary.loss_trades_count}
+                  <span className="text-xs text-gray-500 ml-2">
+                    ({((result.data.summary.loss_trades_count / result.data.summary.total_coins_analyzed) * 100).toFixed(1)}%)
+                  </span>
+                </p>
               </div>
             </div>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-gray-50 dark:bg-black/10 p-3 rounded-lg">
                 <p className="text-sm text-gray-500 dark:text-gray-400">Transfer Edilen Tokenler</p>
-                <p className="text-lg font-semibold">{result.data.summary.transferred_from_another_account_count}</p>
+                <p className="text-lg font-semibold">
+                  {result.data.summary.transferred_from_another_account_count}
+                  <span className="text-xs text-gray-500 ml-2">
+                    ({((result.data.summary.transferred_from_another_account_count / result.data.summary.total_coins_analyzed) * 100).toFixed(1)}%)
+                  </span>
+                </p>
               </div>
               <div className="bg-gray-50 dark:bg-black/10 p-3 rounded-lg">
                 <p className="text-sm text-gray-500 dark:text-gray-400">Başka Cüzdana Aktarılan Tokenler</p>
-                <p className="text-lg font-semibold">{result.data.summary.traded_to_another_wallet_count}</p>
+                <p className="text-lg font-semibold">
+                  {result.data.summary.traded_to_another_wallet_count}
+                  <span className="text-xs text-gray-500 ml-2">
+                    ({((result.data.summary.traded_to_another_wallet_count / result.data.summary.total_coins_analyzed) * 100).toFixed(1)}%)
+                  </span>
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-gray-50 dark:bg-black/10 p-3 rounded-lg">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Gerçekleşmemiş Kâr/Zarar Olan Tokenler</p>
+                <p className="text-lg font-semibold">
+                  {result.data.summary.unrealized_profit_count}
+                  <span className="text-xs text-gray-500 ml-2">
+                    ({((result.data.summary.unrealized_profit_count / result.data.summary.total_coins_analyzed) * 100).toFixed(1)}%)
+                  </span>
+                </p>
               </div>
             </div>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -317,6 +355,11 @@ export default function Home() {
                         Başka Cüzdandan Transfer Edildi
                       </span>
                     )}
+                    {token.is_unrealized_profit && (
+                      <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/20 text-indigo-800 dark:text-indigo-300 text-xs rounded">
+                        Gerçekleşmemiş Kâr/Zarar
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -372,8 +415,8 @@ export default function Home() {
                 <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400">
                   <a 
                     href={`https://solscan.io/token/${token.token_address}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+          target="_blank"
+          rel="noopener noreferrer"
                     className="hover:text-blue-500 underline"
                   >
                     {token.token_address.slice(0, 6)}...{token.token_address.slice(-6)}
