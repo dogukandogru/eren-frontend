@@ -6,6 +6,7 @@ interface TokenAnalysis {
   coin_traded_to_another_wallet: boolean;
   current_price_usd: string;
   first_buy_time: number;
+  is_coin_transferred_from_another_account: boolean;
   is_quick_trade: boolean;
   last_sell_time: number;
   profit_usd: string;
@@ -30,6 +31,7 @@ interface AnalysisSummary {
   total_profit_usd: string;
   total_roi_percentage: string;
   traded_to_another_wallet_count: number;
+  transferred_from_another_account_count: number;
 }
 
 interface AnalysisResponse {
@@ -243,6 +245,16 @@ export default function Home() {
                 <p className="text-lg font-semibold">{result.data.summary.loss_trades_count}</p>
               </div>
             </div>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-gray-50 dark:bg-black/10 p-3 rounded-lg">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Transfer Edilen Tokenler</p>
+                <p className="text-lg font-semibold">{result.data.summary.transferred_from_another_account_count}</p>
+              </div>
+              <div className="bg-gray-50 dark:bg-black/10 p-3 rounded-lg">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Başka Cüzdana Aktarılan Tokenler</p>
+                <p className="text-lg font-semibold">{result.data.summary.traded_to_another_wallet_count}</p>
+              </div>
+            </div>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className={`p-3 rounded-lg ${parseFloat(result.data.summary.total_profit_usd) >= 0 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Toplam Kâr/Zarar</p>
@@ -289,16 +301,23 @@ export default function Home() {
                     <h3 className="font-semibold">{token.token_name || token.token_symbol || "İsimsiz Token"}</h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{token.token_symbol}</p>
                   </div>
-                  {token.is_quick_trade && (
-                    <span className="ml-auto px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 text-xs rounded">
-                      Quick Trade
-                    </span>
-                  )}
-                  {token.coin_traded_to_another_wallet && (
-                    <span className="ml-auto px-2 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 text-xs rounded">
-                      Cüzdan Transfer
-                    </span>
-                  )}
+                  <div className="ml-auto flex gap-1">
+                    {token.is_quick_trade && (
+                      <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 text-xs rounded">
+                        Quick Trade
+                      </span>
+                    )}
+                    {token.coin_traded_to_another_wallet && (
+                      <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 text-xs rounded">
+                        Başka Cüzdana Transfer Edildi
+                      </span>
+                    )}
+                    {token.is_coin_transferred_from_another_account && (
+                      <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300 text-xs rounded">
+                        Başka Cüzdandan Transfer Edildi
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
@@ -321,6 +340,17 @@ export default function Home() {
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Satım Değeri</p>
                     <p className="font-semibold">{formatCurrency(token.total_sell_value_usd)}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Alınan Miktar</p>
+                    <p className="font-medium">{Number(token.total_buy_amount).toLocaleString('tr-TR')}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Satılan Miktar</p>
+                    <p className="font-medium">{Number(token.total_sell_amount).toLocaleString('tr-TR')}</p>
                   </div>
                 </div>
 
