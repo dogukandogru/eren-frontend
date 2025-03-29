@@ -62,6 +62,7 @@ export default function Home() {
 
     setLoading(true);
     setError(null);
+    setResult(null);
 
     try {
       const response = await fetch(
@@ -221,6 +222,13 @@ export default function Home() {
       {error && (
         <div className="w-full max-w-4xl p-4 mb-6 bg-red-100 border border-red-300 rounded-lg text-red-800">
           {error}
+        </div>
+      )}
+
+      {loading && (
+        <div className="w-full max-w-4xl flex justify-center items-center py-16">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-foreground"></div>
+          <p className="ml-4 text-lg font-medium">Analiz yapılıyor...</p>
         </div>
       )}
 
