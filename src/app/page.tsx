@@ -53,6 +53,12 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResponse | null>(null);
+  
+  // Filtre seçenekleri için state'ler
+  const [includeQuickTrade, setIncludeQuickTrade] = useState(false);
+  const [includeTransferredFrom, setIncludeTransferredFrom] = useState(false);
+  const [includeTransferredTo, setIncludeTransferredTo] = useState(false);
+  const [includeUnrealizedProfit, setIncludeUnrealizedProfit] = useState(true);
 
   const handleWalletSearch = async () => {
     if (!walletAddress.trim()) {
@@ -65,9 +71,18 @@ export default function Home() {
     setResult(null);
 
     try {
-      const response = await fetch(
-        `/api/wallet/analysis?address=${walletAddress}&quick_trade_minutes=${quickTradeDuration}&days=${analysisPeriod}`
-      );
+      // Filtreleri URL parametrelerine ekleyelim
+      const params = new URLSearchParams({
+        address: walletAddress,
+        quick_trade_minutes: quickTradeDuration.toString(),
+        days: analysisPeriod.toString(),
+        is_quick_trade: includeQuickTrade.toString(),
+        is_coin_transferred_from_another_account: includeTransferredFrom.toString(),
+        coin_traded_to_another_wallet: includeTransferredTo.toString(),
+        is_unrealized_profit: includeUnrealizedProfit.toString()
+      });
+
+      const response = await fetch(`/api/wallet/analysis?${params.toString()}`);
 
       if (!response.ok) {
         throw new Error("API yanıt vermedi, lütfen daha sonra tekrar deneyin.");
@@ -160,6 +175,64 @@ export default function Home() {
           >
             {loading ? "Aranıyor..." : "Ara"}
           </button>
+        </div>
+
+        {/* Filtre Seçenekleri */}
+        <div className="mt-4 p-4 bg-gray-50 dark:bg-black/10 rounded-lg">
+          <p className="text-sm font-medium mb-3">Filtreleme Seçenekleri</p>
+          <div className="space-y-2">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="quickTradeFilter"
+                checked={includeQuickTrade}
+                onChange={(e) => setIncludeQuickTrade(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="quickTradeFilter" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                Quick Trade
+              </label>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="transferredFromFilter"
+                checked={includeTransferredFrom}
+                onChange={(e) => setIncludeTransferredFrom(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="transferredFromFilter" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                Başka Cüzdandan Gelen
+              </label>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="transferredToFilter"
+                checked={includeTransferredTo}
+                onChange={(e) => setIncludeTransferredTo(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="transferredToFilter" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                Bu Cüzdandan Giden
+              </label>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="unrealizedProfitFilter"
+                checked={includeUnrealizedProfit}
+                onChange={(e) => setIncludeUnrealizedProfit(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="unrealizedProfitFilter" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                Gerçekleşmemiş Kâr/Zarar
+              </label>
+            </div>
+          </div>
         </div>
 
         {/* Analiz Süresi Seçimi */}
