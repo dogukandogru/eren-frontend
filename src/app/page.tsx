@@ -76,7 +76,7 @@ export default function Home() {
         address: walletAddress,
         quick_trade_minutes: quickTradeDuration.toString(),
         days: analysisPeriod.toString(),
-        is_quick_trade: includeQuickTrade.toString(),
+        quick_trade: includeQuickTrade.toString(),
         is_coin_transferred_from_another_account: includeTransferredFrom.toString(),
         coin_traded_to_another_wallet: includeTransferredTo.toString(),
         is_unrealized_profit: includeUnrealizedProfit.toString()

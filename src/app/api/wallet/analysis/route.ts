@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const days = searchParams.get('days');
     
     // Yeni filtre parametreleri
-    const isQuickTrade = searchParams.get('is_quick_trade');
+    const isQuickTrade = searchParams.get('quick_trade');
     const isTransferredFromAnotherAccount = searchParams.get('is_coin_transferred_from_another_account');
     const isTradedToAnotherWallet = searchParams.get('coin_traded_to_another_wallet');
     const isUnrealizedProfit = searchParams.get('is_unrealized_profit');
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     
     if (quickTradeMinutes) apiParams.append('quick_trade_minutes', quickTradeMinutes);
     if (days) apiParams.append('days', days);
-    if (isQuickTrade) apiParams.append('is_quick_trade', isQuickTrade);
+    if (isQuickTrade) apiParams.append('quick_trade', isQuickTrade);
     if (isTransferredFromAnotherAccount) apiParams.append('is_coin_transferred_from_another_account', isTransferredFromAnotherAccount);
     if (isTradedToAnotherWallet) apiParams.append('coin_traded_to_another_wallet', isTradedToAnotherWallet);
     if (isUnrealizedProfit) apiParams.append('is_unrealized_profit', isUnrealizedProfit);
