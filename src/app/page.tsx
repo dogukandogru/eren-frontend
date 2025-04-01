@@ -47,7 +47,7 @@ interface AnalysisResponse {
 
 export default function Home() {
   const [walletAddress, setWalletAddress] = useState("");
-  const [analysisPeriod, setAnalysisPeriod] = useState<1 | 3 | 7 | 30>(7);
+  const [analysisPeriod, setAnalysisPeriod] = useState<7 | 30 | 90>(7);
   const [quickTradeDuration, setQuickTradeDuration] = useState<1 | 2 | 5 | 10 | 30 | number>(5);
   const [customDuration, setCustomDuration] = useState("");
   const [loading, setLoading] = useState(false);
@@ -108,7 +108,7 @@ export default function Home() {
     }
   };
 
-  const handlePeriodChange = (period: 1 | 3 | 7 | 30) => {
+  const handlePeriodChange = (period: 7 | 30 | 90) => {
     setAnalysisPeriod(period);
   };
 
@@ -239,17 +239,15 @@ export default function Home() {
         <div className="mt-6">
           <p className="text-sm font-medium mb-2 text-center">Analiz Süresi</p>
           <div className="flex justify-between gap-2">
-            {[1, 3, 7, 30].map((period) => (
+            {[7, 30, 90].map((period) => (
               <button
                 key={period}
-                onClick={() => handlePeriodChange(period as 1 | 3 | 7 | 30)}
+                onClick={() => handlePeriodChange(period as 7 | 30 | 90)}
                 className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
                   analysisPeriod === period
                     ? "bg-foreground text-background"
                     : "bg-transparent border border-black/[.08] dark:border-white/[.145] hover:bg-black/[.05] dark:hover:bg-white/[.06]"
                 }`}
-                aria-pressed={analysisPeriod === period}
-                tabIndex={0}
               >
                 {period} Gün
               </button>
