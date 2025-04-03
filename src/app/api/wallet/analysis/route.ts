@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import fetch from 'node-fetch';
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,20 +38,12 @@ export async function GET(request: NextRequest) {
     if (isUnrealizedProfit) apiParams.append('is_unrealized_profit', isUnrealizedProfit);
     
     // Proxy istekleri yap
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 dakika timeout
-
-    const response = await fetch(
-      `${apiUrl}/wallet/analysis?${apiParams.toString()}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        signal: controller.signal
-      }
-    );
-
-    clearTimeout(timeoutId);
+    const response = await fetch(`${apiUrl}/wallet/analysis?${apiParams.toString()}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      timeout: 300000, // 5 dakika timeout
+    });
 
     // API yanıtını al
     const data = await response.json();
