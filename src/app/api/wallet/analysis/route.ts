@@ -37,14 +37,20 @@ export async function GET(request: NextRequest) {
     if (isUnrealizedProfit) apiParams.append('is_unrealized_profit', isUnrealizedProfit);
     
     // Proxy istekleri yap
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 dakika timeout
+
     const response = await fetch(
       `${apiUrl}/wallet/analysis?${apiParams.toString()}`,
       {
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: controller.signal
       }
     );
+
+    clearTimeout(timeoutId);
 
     // API yanıtını al
     const data = await response.json();
