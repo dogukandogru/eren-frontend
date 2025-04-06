@@ -89,6 +89,7 @@ export default function Home() {
       }
 
       const data: AnalysisResponse = await response.json();
+      console.log('API Yanıtı:', data);
       setResult(data);
     } catch (err) {
       console.error("Hata:", err);

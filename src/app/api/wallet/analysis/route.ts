@@ -49,7 +49,10 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
 
     // Yanıtı döndür
-    return NextResponse.json(data);
+    return NextResponse.json({
+      success: true,
+      data: data
+    });
   } catch (error) {
     console.error('API Hatası:', error);
     return NextResponse.json(
