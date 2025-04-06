@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
       },
-      timeout: 300000, // 5 dakika timeout
+      timeout: 3000000, // 5 dakika timeout
     });
 
     // API yanıtını al
