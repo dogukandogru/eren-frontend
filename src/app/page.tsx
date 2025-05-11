@@ -45,6 +45,9 @@ interface AnalysisResponse {
   success: boolean;
 }
 
+// Sekme türleri
+type TabType = "most-profitable" | "all-transactions";
+
 export default function Home() {
   const [walletAddress, setWalletAddress] = useState("");
   const [analysisPeriod, setAnalysisPeriod] = useState<7 | 30 | 90>(7);
@@ -53,12 +56,30 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResponse | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>("most-profitable");
   
   // Filtre seçenekleri için state'ler
   const [includeQuickTrade, setIncludeQuickTrade] = useState(false);
   const [includeTransferredFrom, setIncludeTransferredFrom] = useState(false);
   const [includeTransferredTo, setIncludeTransferredTo] = useState(false);
   const [includeUnrealizedProfit, setIncludeUnrealizedProfit] = useState(true);
+
+  // En çok kar edilen iki işlemi bulan yardımcı fonksiyon
+  const getMostProfitableTransactions = (): TokenAnalysis[] => {
+    if (!result || !result.data || !result.data.analysis || result.data.analysis.length === 0) {
+      return [];
+    }
+
+    // İşlemleri kar miktarına göre sıralayıp en karlı iki işlemi döndür
+    return [...result.data.analysis]
+      .sort((a, b) => parseFloat(b.profit_usd) - parseFloat(a.profit_usd))
+      .slice(0, 2);
+  };
+
+  // Sekme değiştirme fonksiyonu
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+  };
 
   const handleWalletSearch = async () => {
     if (!walletAddress.trim()) {
@@ -397,114 +418,255 @@ export default function Home() {
             </div>
           </div>
 
-          {/* İşlem Listesi */}
-          <h2 className="text-xl font-bold mb-4">İşlemler</h2>
-          <div className="space-y-4">
-            {result.data.analysis.map((token, index) => (
-              <div key={index} className={`bg-white dark:bg-black/20 rounded-lg shadow-md p-4 border-l-4 ${parseFloat(token.profit_usd) >= 0 ? 'border-green-500' : 'border-red-500'}`}>
-                <div className="flex items-center gap-3 mb-3">
-                  {token.token_image_url ? (
-                    <img 
-                      src={token.token_image_url} 
-                      alt={token.token_name} 
-                      className="w-10 h-10 rounded-full"
-                      onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/40x40?text=Token" }}
-                    />
-                  ) : (
-                    <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                      <span className="text-xs">{token.token_symbol || "?"}</span>
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="font-semibold">{token.token_name || token.token_symbol || "İsimsiz Token"}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{token.token_symbol}</p>
-                  </div>
-                  <div className="ml-auto flex gap-1">
-                    {token.is_quick_trade && (
-                      <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 text-xs rounded">
-                        Quick Trade
-                      </span>
-                    )}
-                    {token.coin_traded_to_another_wallet && (
-                      <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 text-xs rounded">
-                        Başka Cüzdana Transfer Edildi
-                      </span>
-                    )}
-                    {token.is_coin_transferred_from_another_account && (
-                      <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300 text-xs rounded">
-                        Başka Cüzdandan Transfer Edildi
-                      </span>
-                    )}
-                    {token.is_unrealized_profit && (
-                      <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/20 text-indigo-800 dark:text-indigo-300 text-xs rounded">
-                        Gerçekleşmemiş Kâr/Zarar
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Kâr/Zarar</p>
-                    <p className={`font-semibold ${parseFloat(token.profit_usd) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                      {formatCurrency(token.profit_usd)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">ROI</p>
-                    <p className={`font-semibold ${parseFloat(token.roi_percentage) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                      {formatPercentage(token.roi_percentage)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Alım Değeri</p>
-                    <p className="font-semibold">{formatCurrency(token.total_buy_value_usd)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Satım Değeri</p>
-                    <p className="font-semibold">{formatCurrency(token.total_sell_value_usd)}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Alınan Miktar</p>
-                    <p className="font-medium">{Number(token.total_buy_amount).toLocaleString('tr-TR')}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Satılan Miktar</p>
-                    <p className="font-medium">{Number(token.total_sell_amount).toLocaleString('tr-TR')}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">İlk Alım</p>
-                    <p>{getTimeFromUnix(token.first_buy_time)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Son Satım</p>
-                    <p>{getTimeFromUnix(token.last_sell_time)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">İşlem Süresi</p>
-                    <p>{token.trade_duration_minutes} Dakika</p>
-                  </div>
-                </div>
-
-                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400">
-                  <a 
-                    href={`https://solscan.io/token/${token.token_address}`}
-          target="_blank"
-          rel="noopener noreferrer"
-                    className="hover:text-blue-500 underline"
-                  >
-                    {token.token_address.slice(0, 6)}...{token.token_address.slice(-6)}
-                  </a>
-                </div>
-              </div>
-            ))}
+          {/* Sekme Navigasyonu */}
+          <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
+            <button
+              onClick={() => handleTabChange("most-profitable")}
+              className={`py-3 px-4 text-sm font-medium transition-colors ${
+                activeTab === "most-profitable"
+                  ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300"
+              }`}
+            >
+              En Kârlı İşlemler
+            </button>
+            <button
+              onClick={() => handleTabChange("all-transactions")}
+              className={`py-3 px-4 text-sm font-medium transition-colors ${
+                activeTab === "all-transactions"
+                  ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300"
+              }`}
+            >
+              Tüm İşlemler
+            </button>
           </div>
+
+          {/* En Kârlı İşlemler Sekmesi */}
+          {activeTab === "most-profitable" && (
+            <>
+              <h2 className="text-xl font-bold mb-4">En Kârlı İşlemler</h2>
+              <div className="space-y-4 mb-8">
+                {getMostProfitableTransactions().map((token, index) => (
+                  <div key={`most-profitable-${index}`} className={`bg-white dark:bg-black/20 rounded-lg shadow-md p-4 border-l-4 ${parseFloat(token.profit_usd) >= 0 ? 'border-green-500' : 'border-red-500'}`}>
+                    <div className="flex items-center gap-3 mb-3">
+                      {token.token_image_url ? (
+                        <img 
+                          src={token.token_image_url} 
+                          alt={token.token_name} 
+                          className="w-10 h-10 rounded-full"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/40x40?text=Token" }}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                          <span className="text-xs">{token.token_symbol || "?"}</span>
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="font-semibold">{token.token_name || token.token_symbol || "İsimsiz Token"}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{token.token_symbol}</p>
+                      </div>
+                      <div className="ml-auto flex gap-1">
+                        {token.is_quick_trade && (
+                          <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 text-xs rounded">
+                            Quick Trade
+                          </span>
+                        )}
+                        {token.coin_traded_to_another_wallet && (
+                          <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 text-xs rounded">
+                            Başka Cüzdana Transfer Edildi
+                          </span>
+                        )}
+                        {token.is_coin_transferred_from_another_account && (
+                          <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300 text-xs rounded">
+                            Başka Cüzdandan Transfer Edildi
+                          </span>
+                        )}
+                        {token.is_unrealized_profit && (
+                          <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/20 text-indigo-800 dark:text-indigo-300 text-xs rounded">
+                            Gerçekleşmemiş Kâr/Zarar
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Kâr/Zarar</p>
+                        <p className={`font-semibold ${parseFloat(token.profit_usd) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {formatCurrency(token.profit_usd)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">ROI</p>
+                        <p className={`font-semibold ${parseFloat(token.roi_percentage) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {formatPercentage(token.roi_percentage)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Alım Değeri</p>
+                        <p className="font-semibold">{formatCurrency(token.total_buy_value_usd)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Satım Değeri</p>
+                        <p className="font-semibold">{formatCurrency(token.total_sell_value_usd)}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Alınan Miktar</p>
+                        <p className="font-medium">{Number(token.total_buy_amount).toLocaleString('tr-TR')}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Satılan Miktar</p>
+                        <p className="font-medium">{Number(token.total_sell_amount).toLocaleString('tr-TR')}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">İlk Alım</p>
+                        <p>{getTimeFromUnix(token.first_buy_time)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Son Satım</p>
+                        <p>{getTimeFromUnix(token.last_sell_time)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">İşlem Süresi</p>
+                        <p>{token.trade_duration_minutes} Dakika</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400">
+                      <a 
+                        href={`https://solscan.io/token/${token.token_address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-blue-500 underline"
+                      >
+                        {token.token_address.slice(0, 6)}...{token.token_address.slice(-6)}
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Tüm İşlemler Sekmesi */}
+          {activeTab === "all-transactions" && (
+            <>
+              <h2 className="text-xl font-bold mb-4">Tüm İşlemler</h2>
+              <div className="space-y-4">
+                {result.data.analysis.map((token, index) => (
+                  <div key={index} className={`bg-white dark:bg-black/20 rounded-lg shadow-md p-4 border-l-4 ${parseFloat(token.profit_usd) >= 0 ? 'border-green-500' : 'border-red-500'}`}>
+                    <div className="flex items-center gap-3 mb-3">
+                      {token.token_image_url ? (
+                        <img 
+                          src={token.token_image_url} 
+                          alt={token.token_name} 
+                          className="w-10 h-10 rounded-full"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/40x40?text=Token" }}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                          <span className="text-xs">{token.token_symbol || "?"}</span>
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="font-semibold">{token.token_name || token.token_symbol || "İsimsiz Token"}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{token.token_symbol}</p>
+                      </div>
+                      <div className="ml-auto flex gap-1">
+                        {token.is_quick_trade && (
+                          <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 text-xs rounded">
+                            Quick Trade
+                          </span>
+                        )}
+                        {token.coin_traded_to_another_wallet && (
+                          <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 text-xs rounded">
+                            Başka Cüzdana Transfer Edildi
+                          </span>
+                        )}
+                        {token.is_coin_transferred_from_another_account && (
+                          <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300 text-xs rounded">
+                            Başka Cüzdandan Transfer Edildi
+                          </span>
+                        )}
+                        {token.is_unrealized_profit && (
+                          <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/20 text-indigo-800 dark:text-indigo-300 text-xs rounded">
+                            Gerçekleşmemiş Kâr/Zarar
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Kâr/Zarar</p>
+                        <p className={`font-semibold ${parseFloat(token.profit_usd) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {formatCurrency(token.profit_usd)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">ROI</p>
+                        <p className={`font-semibold ${parseFloat(token.roi_percentage) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {formatPercentage(token.roi_percentage)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Alım Değeri</p>
+                        <p className="font-semibold">{formatCurrency(token.total_buy_value_usd)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Satım Değeri</p>
+                        <p className="font-semibold">{formatCurrency(token.total_sell_value_usd)}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Alınan Miktar</p>
+                        <p className="font-medium">{Number(token.total_buy_amount).toLocaleString('tr-TR')}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Satılan Miktar</p>
+                        <p className="font-medium">{Number(token.total_sell_amount).toLocaleString('tr-TR')}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">İlk Alım</p>
+                        <p>{getTimeFromUnix(token.first_buy_time)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Son Satım</p>
+                        <p>{getTimeFromUnix(token.last_sell_time)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">İşlem Süresi</p>
+                        <p>{token.trade_duration_minutes} Dakika</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400">
+                      <a 
+                        href={`https://solscan.io/token/${token.token_address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-blue-500 underline"
+                      >
+                        {token.token_address.slice(0, 6)}...{token.token_address.slice(-6)}
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
